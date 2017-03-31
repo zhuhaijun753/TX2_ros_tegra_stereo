@@ -30,20 +30,28 @@
 //#include "stereo_matching.hpp"
 //#include "color_disparity_graph.hpp"
 
+#define IMG_HEIGHT 800
+#define IMG_WIDTH 960
+
+cv::Mat rmap[2][2];
+
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
   cv_bridge::CvImagePtr cv_ptr;
-  cv::Mat img1,img2;
-  cv::Rect myROI_1(0,0,960,800); // constant 
-  cv::Rect myROI_2(0,800,960,800); // constant 
+  cv::Mat img1,img2,r_img1,r_img2;
+  cv::Rect myROI_1(0,0,IMG_WIDTH,IMG_HEIGHT); // constant 
+  cv::Rect myROI_2(0,IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // constant 
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
     img1 = cv_ptr->image(myROI_1);
     img2 = cv_ptr->image(myROI_2);
 
-    cv::imshow("view1", img1);
-    cv::imshow("view2", img2);  
+    cv::remap(img1,r_img1,rmap[0][0],rmap[0][1],cv::INTER_LINEAR);
+    cv::remap(img2,r_img2,rmap[1][0],rmap[1][1],cv::INTER_LINEAR);
+
+    cv::imshow("view1", r_img1);
+    cv::imshow("view2", r_img2);  
 
     cv::waitKey(30);
   }
@@ -57,9 +65,12 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "image_listener");
   ros::NodeHandle nh;
-  cv::namedWindow("view");
+  cv::namedWindow("view1");
+  cv::namedWindow("view2");
   cv::startWindowThread();
 
+
+  // Read in camera parameters 
   cv::Vec3d T;
   cv::Vec4d D1,D2;
   cv::Mat R1, R2, P1, P2, Q, K1, K2, R;
@@ -87,16 +98,19 @@ int main(int argc, char **argv)
   cv::Matx33d R_c(data_R);
   std::cout << "Finished reading in parameter values." << std::endl;
 
+  // Calculate rectification re-mapping / warping
   cv::Size img_size;
-  img_size.height = 800;
-  img_size.width = 960;
+  img_size.height = IMG_HEIGHT;
+  img_size.width = IMG_WIDTH;
 
-  cv::Mat rmap[2][2];
+  //cv::Mat rmap[2][2];
   cv::fisheye::initUndistortRectifyMap(K1, D1, R1, P1, img_size, CV_16SC2, rmap[0][0], rmap[0][1]);
   cv::fisheye::initUndistortRectifyMap(K2, D2, R2, P2, img_size, CV_16SC2, rmap[1][0], rmap[1][1]);
+
 
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe("/image", 1, imageCallback);
   ros::spin();
-  cv::destroyWindow("view");
+  cv::destroyWindow("view1");
+  cv::destroyWindow("view2");
 }
