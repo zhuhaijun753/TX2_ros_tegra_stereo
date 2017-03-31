@@ -59,6 +59,42 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
   cv::namedWindow("view");
   cv::startWindowThread();
+
+  cv::Vec3d T;
+  cv::Vec4d D1,D2;
+  cv::Mat R1, R2, P1, P2, Q, K1, K2, R;
+  cv::FileStorage fs("/home/nvidia/catkin_ws/src/ros_tegra_stereo/params/cam_stereo.yml",cv::FileStorage::READ);
+  if (!fs.isOpened()) {
+      std::cerr << "Failed to open calibration parameter file." << std::endl;
+  	return 0;
+  }
+  fs["K1"] >> K1;
+  fs["K2"] >> K2;
+  fs["R"] >> R;
+  fs["R1"] >> R1;
+  fs["R2"] >> R2;
+  fs["P1"] >> P1;
+  fs["P2"] >> P2;
+  fs["Q"] >> Q;
+  fs["T"] >> T;
+  fs["D1"] >> D1;
+  fs["D2"] >> D2;
+  double* data_k1c = reinterpret_cast<double*>(K1.data);
+  cv::Matx33d K1_c(data_k1c);
+  double* data_k2c = reinterpret_cast<double*>(K2.data);
+  cv::Matx33d K2_c(data_k2c);
+  double* data_R = reinterpret_cast<double*>(R.data);
+  cv::Matx33d R_c(data_R);
+  std::cout << "Finished reading in parameter values." << std::endl;
+
+  cv::Size img_size;
+  img_size.height = 800;
+  img_size.width = 960;
+
+  cv::Mat rmap[2][2];
+  cv::fisheye::initUndistortRectifyMap(K1, D1, R1, P1, img_size, CV_16SC2, rmap[0][0], rmap[0][1]);
+  cv::fisheye::initUndistortRectifyMap(K2, D2, R2, P2, img_size, CV_16SC2, rmap[1][0], rmap[1][1]);
+
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe("/image", 1, imageCallback);
   ros::spin();
