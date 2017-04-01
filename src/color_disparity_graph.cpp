@@ -28,7 +28,7 @@
 
 #include <algorithm>
 
-#include <OVX/UtilityOVX.hpp>
+#include <UtilityOVX.hpp>
 
 #include "color_disparity_graph.hpp"
 

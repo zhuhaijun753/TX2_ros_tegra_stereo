@@ -36,7 +36,7 @@
 #include <VX/vxu.h>
 #include <NVX/nvx.h>
 
-#include <OVX/UtilityOVX.hpp>
+#include <UtilityOVX.hpp>
 
 #ifdef __ANDROID__
 #define LOG_TAG "SGBM"

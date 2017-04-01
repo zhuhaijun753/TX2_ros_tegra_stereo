@@ -24,41 +24,30 @@ pkg_check_modules(VisionWorks REQUIRED visionworks)
 include_directories(${VisionWorks_INCLUDE_DIRS})
 link_directories(${VisionWorks_LIBRARY_DIRS})
 
-set(NVX_INCLUDE "nvxio/include/")
-include_directories(${NVX_INCLUDE})
-
-set(NVX_SRC "nvxio/src/")
-include_directories(${NVX_SRC})
-
-set(OBJ_FLAGS "nvxio/obj/release")
-
-
-set(OVX_STATIC_LIBS "libs/aarch64/linux/release")
+set(ALL_INCLUDE "src/")
+include_directories(${ALL_INCLUDE})
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_compile_options(-std=c++0x -DCUDA_API_PER_THREAD_DEFAULT_STREAM)
 
 add_executable(subscriber
-	       src/my_subscriber.cpp 
-	       ${NVX_SRC}/NVX/Application.cpp
-	       ${NVX_SRC}/NVX/ConfigParser.cpp
-	       ${NVX_SRC}/NVX/SyncTimer.cpp
-	       #${NVX_SRC}/OVX/UtilityOVX.cpp
-	       #${NVX_SRC}/OVX/Render/RenderOVX.cpp
-	       #${NVX_SRC}/OVX/FrameSource/FrameSourceOVX.cpp	
-               ${NVX_INCLUDE}/NVX/Application.hpp 
-	       ${NVX_INCLUDE}/NVX/ConfigParser.hpp
-               ${NVX_INCLUDE}/NVX/SyncTimer.hpp 
-	       #${NVX_INCLUDE}/OVX/UtilityOVX.hpp
-               #${NVX_INCLUDE}/OVX/RenderOVX.hpp 
-	       #${NVX_INCLUDE}/OVX/FrameSourceOVX.hpp
+	        src/my_subscriber.cpp 
+		src/Application.cpp
+		src/ArgumentParser.cpp
+		src/color_disparity_graph.cpp
+		src/ConfigParser.cpp
+		src/NVXIOFeatures.cpp
+		src/OptionHandler.cpp
+		src/ProfilerRange.cpp
+		src/stereo_matching.cpp
+		#src/SyncTimer.cpp
+		src/Utility.cpp
+		src/UtilityOVX.cpp
 		)
 target_link_libraries(subscriber 
 		${catkin_LIBRARIES} 
 		${OpenCV_LIBRARIES}
 		${CUDArt_LIBRARIES}
-	        ${VisionWorks_LIBRARIES}
-		${OVX_STATIC_LIBS}/libnvx.a
-		${OVX_STATIC_LIBS}/libovx.a)
+	        ${VisionWorks_LIBRARIES})
 
