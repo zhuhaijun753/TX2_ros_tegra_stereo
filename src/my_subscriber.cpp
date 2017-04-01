@@ -16,16 +16,18 @@
 #include <string>
 #include <memory>
 
-//#include <NVX/nvx.h>
-//#include <NVX/nvx_timer.hpp>
+#include <NVX/nvx.h>
+#include <NVX/nvx_timer.hpp>
+#include <NVX/nvx_opencv_interop.hpp>
 
-//#include <NVX/Application.hpp>
-//#include <NVX/ConfigParser.hpp>
-//#include <OVX/FrameSourceOVX.hpp>
+#include <NVX/Application.hpp>
+#include <NVX/ConfigParser.hpp>
+#include <NVX/SyncTimer.hpp>
+
+#include <OVX/FrameSourceOVX.hpp>
 //#include <OVX/RenderOVX.hpp>
-//#include <NVX/SyncTimer.hpp>
-//#include <OVX/UtilityOVX.hpp>
-//#include <NVX/nvx_opencv_interop.hpp>
+
+#include <OVX/UtilityOVX.hpp>
 
 //#include "stereo_matching.hpp"
 //#include "color_disparity_graph.hpp"
@@ -37,6 +39,8 @@ cv::Mat rmap[2][2];
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
+  nvx::Timer read_rect_timer;
+  read_rect_timer.tic();
   cv_bridge::CvImagePtr cv_ptr;
   cv::Mat img1,img2,r_img1,r_img2;
   cv::Rect myROI_1(0,0,IMG_WIDTH,IMG_HEIGHT); // constant 
@@ -54,6 +58,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     cv::imshow("view2", r_img2);  
 
     cv::waitKey(30);
+    double timer = read_rect_timer.toc();
+    std::cout << "Rect : " << timer << " ms" << std::endl << std::endl;
   }
   catch (cv_bridge::Exception& e)
   {
@@ -106,7 +112,11 @@ int main(int argc, char **argv)
   //cv::Mat rmap[2][2];
   cv::fisheye::initUndistortRectifyMap(K1, D1, R1, P1, img_size, CV_16SC2, rmap[0][0], rmap[0][1]);
   cv::fisheye::initUndistortRectifyMap(K2, D2, R2, P2, img_size, CV_16SC2, rmap[1][0], rmap[1][1]);
+  std::cout << "Rectification remapping / warp calculated." << std::endl;
 
+  nvxio::Application &app = nvxio::Application::get();
+  app.setDescription("Stereo Matching for Disparity Estimation");
+  
 
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe("/image", 1, imageCallback);
