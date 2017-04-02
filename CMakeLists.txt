@@ -41,7 +41,6 @@ add_executable(subscriber
 		src/OptionHandler.cpp
 		src/ProfilerRange.cpp
 		src/stereo_matching.cpp
-		#src/SyncTimer.cpp
 		src/Utility.cpp
 		src/UtilityOVX.cpp
 		)

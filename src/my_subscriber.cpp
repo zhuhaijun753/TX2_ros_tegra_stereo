@@ -22,7 +22,6 @@
 
 #include <Application.hpp>
 #include <ConfigParser.hpp>
-//#include <SyncTimer.hpp>
 
 #include <FrameSourceOVX.hpp>
 #include <RenderOVX.hpp>
@@ -30,7 +29,6 @@
 #include <UtilityOVX.hpp>
 
 #include "stereo_matching.hpp"
-#include "color_disparity_graph.hpp"
 
 #define IMG_HEIGHT 800
 #define IMG_WIDTH 960
@@ -100,8 +98,8 @@ static bool read(const std::string &nf, StereoMatching::StereoMatchingParams &co
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
-  //nvx::Timer read_rect_timer;
-  //read_rect_timer.tic();
+  nvx::Timer read_rect_timer;
+  read_rect_timer.tic();
   cv_bridge::CvImagePtr cv_ptr;
   cv::Mat img1,img2,img3,r_img1,r_img2;
   cv::Rect myROI_1(0,0*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // cam1
@@ -125,7 +123,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     right_rect = nvx_cv::createVXImageFromCVMat(context,r_img1);
     NVXIO_CHECK_REFERENCE(right_rect);
 
-
     disparity = vxCreateImage(context, IMG_WIDTH, IMG_HEIGHT, VX_DF_IMAGE_U8);
     NVXIO_CHECK_REFERENCE(disparity);
     std::unique_ptr<StereoMatching> stereo(StereoMatching::createStereoMatching(
@@ -135,16 +132,13 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     stereo->run(); 
 
     vx_uint32 plane_index = 0;
-    vx_rectangle_t rect = {
-	0u,0u,
-	960u,800u
-	};
+    vx_rectangle_t rect = {0u,0u,960u,800u};
     nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_READ_ONLY,VX_MEMORY_TYPE_HOST);
     cv::Mat disp = map.getMat();
-    cv::imshow("disparity",disp);
-    cv::waitKey(1);
-    //double timer = read_rect_timer.toc();
-    //std::cout << "Rect : " << timer << " ms" << std::endl << std::endl;
+    //cv::imshow("disparity",disp);
+    //cv::waitKey(1);
+    double timer = read_rect_timer.toc();
+    std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
   }
   catch (cv_bridge::Exception& e)
   {
@@ -157,7 +151,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "image_listener");
   ros::NodeHandle nh;
   cv::startWindowThread();
-
   // Read in camera parameters 
   cv::Vec3d T;
   cv::Vec4d D1,D2;
