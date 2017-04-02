@@ -103,21 +103,22 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   //nvx::Timer read_rect_timer;
   //read_rect_timer.tic();
   cv_bridge::CvImagePtr cv_ptr;
-  cv::Mat img1,img2,r_img1,r_img2;
-  cv::Rect myROI_1(0,1*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // constant 
-  cv::Rect myROI_2(0,2*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // constant 
+  cv::Mat img1,img2,img3,r_img1,r_img2;
+  cv::Rect myROI_1(0,0*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // cam1
+  cv::Rect myROI_2(0,1*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // cam2
+  cv::Rect myROI_3(0,2*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // cam3
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    img1 = cv_ptr->image(myROI_1);
-    img2 = cv_ptr->image(myROI_2);
+    img1 = cv_ptr->image(myROI_2); // cam2
+    img2 = cv_ptr->image(myROI_3); // cam3
 
-    cv::remap(img2,r_img1,rmap[0][0],rmap[0][1],cv::INTER_LINEAR);
-    cv::remap(img1,r_img2,rmap[1][0],rmap[1][1],cv::INTER_LINEAR);
+    cv::remap(img1,r_img1,rmap[0][0],rmap[0][1],cv::INTER_LINEAR); // cam2 
+    cv::remap(img2,r_img2,rmap[1][0],rmap[1][1],cv::INTER_LINEAR); // cam3
 
-    cv::imshow("view1", r_img1);
-    cv::imshow("view2", r_img2);  
-
+    //cv::imshow("view1", r_img1);
+    //cv::imshow("view2", r_img2);
+    //cv::imshow("view3", r_img3);  
 
     left_rect = nvx_cv::createVXImageFromCVMat(context,r_img2);
     NVXIO_CHECK_REFERENCE(left_rect);
@@ -138,13 +139,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 	0u,0u,
 	960u,800u
 	};
-    nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_WRITE_ONLY,VX_MEMORY_TYPE_HOST);
+    nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_READ_ONLY,VX_MEMORY_TYPE_HOST);
     cv::Mat disp = map.getMat();
-    //cv::randu(disp,0,255);
-    std::cout << disp.at<int>(5,5);
     cv::imshow("disparity",disp);
-
-    cv::waitKey(30);
+    cv::waitKey(1);
     //double timer = read_rect_timer.toc();
     //std::cout << "Rect : " << timer << " ms" << std::endl << std::endl;
   }
@@ -158,10 +156,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "image_listener");
   ros::NodeHandle nh;
-  cv::namedWindow("view1");
-  cv::namedWindow("view2");
   cv::startWindowThread();
-
 
   // Read in camera parameters 
   cv::Vec3d T;
@@ -232,6 +227,4 @@ int main(int argc, char **argv)
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe("/image", 1, imageCallback);
   ros::spin();
-  cv::destroyWindow("view1");
-  cv::destroyWindow("view2");
 }
