@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <ctime>
+#include <cstdio>
 #include <sys/time.h>
 
 #include <sstream>
@@ -41,6 +42,7 @@ vx_image disparity;
 StereoMatching::StereoMatchingParams params;
 ovxio::ContextGuard context;
 StereoMatching::ImplementationType implementationType;
+int counter_global = 0;
 
 static bool read(const std::string &nf, StereoMatching::StereoMatchingParams &config, std::string &message)
 {
@@ -136,6 +138,13 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_READ_ONLY,VX_MEMORY_TYPE_HOST);
     cv::Mat disp = map.getMat();
     cv::imshow("disparity",disp);
+
+    //char savefilename[50];
+    //snprintf(savefilename,sizeof(savefilename),"/home/nvidia/saveddisp-3/disparity%05d.png",counter_global);
+    //counter_global = counter_global + 1;
+    //printf("%s",savefilename);
+    //cv::imwrite(savefilename,disp);
+
     cv::waitKey(1);
     double timer = read_rect_timer.toc();
     std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
