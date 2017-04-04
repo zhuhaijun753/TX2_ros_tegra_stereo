@@ -184,6 +184,6 @@ public:
 
 }
 
-#include "detail/OptionHandler.hpp"
+#include "Private/OptionHandler.hpp"
 
 #endif // NVXIO_OPTIONHANDLER_HPP

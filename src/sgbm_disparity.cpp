@@ -23,8 +23,8 @@
 #include <Application.hpp>
 #include <ConfigParser.hpp>
 
-#include <FrameSourceOVX.hpp>
-#include <RenderOVX.hpp>
+//#include <FrameSourceOVX.hpp>
+//#include <RenderOVX.hpp>
 
 #include <UtilityOVX.hpp>
 
@@ -135,8 +135,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     vx_rectangle_t rect = {0u,0u,960u,800u};
     nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_READ_ONLY,VX_MEMORY_TYPE_HOST);
     cv::Mat disp = map.getMat();
-    //cv::imshow("disparity",disp);
-    //cv::waitKey(1);
+    cv::imshow("disparity",disp);
+    cv::waitKey(1);
     double timer = read_rect_timer.toc();
     std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
   }
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
   cv::Vec3d T;
   cv::Vec4d D1,D2;
   cv::Mat R1, R2, P1, P2, Q, K1, K2, R;
-  cv::FileStorage fs("/home/nvidia/catkin_ws/src/ros_tegra_stereo/params/cam_stereo.yml",cv::FileStorage::READ);
+  cv::FileStorage fs("/home/nvidia/catkin_ws/src/ros_tegra_stereo/data/cam_stereo.yml",cv::FileStorage::READ);
   if (!fs.isOpened()) {
       std::cerr << "Failed to open calibration parameter file." << std::endl;
   	return 0;
