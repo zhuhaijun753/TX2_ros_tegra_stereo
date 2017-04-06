@@ -23,10 +23,6 @@
 
 #include <Application.hpp>
 #include <ConfigParser.hpp>
-
-//#include <FrameSourceOVX.hpp>
-//#include <RenderOVX.hpp>
-
 #include <UtilityOVX.hpp>
 
 #include "stereo_matching.hpp"
@@ -35,7 +31,6 @@
 #define IMG_WIDTH 960
 
 cv::Mat rmap[2][2];
-
 vx_image left_rect;
 vx_image right_rect;
 vx_image disparity;
@@ -43,6 +38,8 @@ StereoMatching::StereoMatchingParams params;
 ovxio::ContextGuard context;
 StereoMatching::ImplementationType implementationType;
 int counter_global = 0;
+vx_uint32 plane_index = 0;
+vx_rectangle_t rect = {0u,0u,960u,800u};
 
 static bool read(const std::string &nf, StereoMatching::StereoMatchingParams &config, std::string &message)
 {
@@ -127,17 +124,13 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     disparity = vxCreateImage(context, IMG_WIDTH, IMG_HEIGHT, VX_DF_IMAGE_U8);
     NVXIO_CHECK_REFERENCE(disparity);
-    std::unique_ptr<StereoMatching> stereo(StereoMatching::createStereoMatching(
-                                           context, params,implementationType,
-                                           left_rect, right_rect, disparity));
-
+    std::unique_ptr<StereoMatching> stereo(StereoMatching::createStereoMatching(context,
+					   params,implementationType,left_rect, right_rect, disparity));
     stereo->run(); 
 
-    vx_uint32 plane_index = 0;
-    vx_rectangle_t rect = {0u,0u,960u,800u};
     nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_READ_ONLY,VX_MEMORY_TYPE_HOST);
     cv::Mat disp = map.getMat();
-    cv::imshow("disparity",disp);
+    //cv::imshow("disparity",disp);
 
     //char savefilename[50];
     //snprintf(savefilename,sizeof(savefilename),"/home/nvidia/saveddisp-3/disparity%05d.png",counter_global);
@@ -145,7 +138,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     //printf("%s",savefilename);
     //cv::imwrite(savefilename,disp);
 
-    cv::waitKey(1);
+    //cv::waitKey(1);
     double timer = read_rect_timer.toc();
     std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
   }
@@ -221,10 +214,6 @@ int main(int argc, char **argv)
   NVXIO_CHECK_REFERENCE(right_rect);
   disparity = vxCreateImage(context, IMG_WIDTH, IMG_HEIGHT, VX_DF_IMAGE_U8);
   NVXIO_CHECK_REFERENCE(disparity);
-
-  std::unique_ptr<StereoMatching> stereo(StereoMatching::createStereoMatching(
-                                         context, params,implementationType,
-                                         left_rect, right_rect, disparity));
 
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe("/image", 1, imageCallback);
