@@ -110,17 +110,12 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    //img1 = cv_ptr->image(myROI_1); // camera 1
-    //img2 = cv_ptr->image(myROI_2); // camera 2
-    //img3 = cv_ptr->image(myROI_3); // camera 3
-
     img1 = cv_ptr->image(myROI_1);
     if (baseline_opt == 0)
 	img2 = cv_ptr->image(myROI_2);
     else
 	img2 = cv_ptr->image(myROI_3);
     
-
     cv::remap(img1,r_img1,rmap[0][0],rmap[0][1],cv::INTER_LINEAR); // camera 2 
     cv::remap(img2,r_img2,rmap[1][0],rmap[1][1],cv::INTER_LINEAR); // camera 3
 
