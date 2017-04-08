@@ -12,6 +12,8 @@
 #include <cstdio>
 #include <sys/time.h>
 
+#include "popt_pp.h"
+
 #include <sstream>
 #include <iomanip>
 #include <string>
@@ -38,6 +40,7 @@ StereoMatching::StereoMatchingParams params;
 ovxio::ContextGuard context;
 StereoMatching::ImplementationType implementationType;
 int counter_global = 0;
+int baseline_opt;
 vx_uint32 plane_index = 0;
 vx_rectangle_t rect = {0u,0u,960u,800u};
 
@@ -101,25 +104,33 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   read_rect_timer.tic();
   cv_bridge::CvImagePtr cv_ptr;
   cv::Mat img1,img2,img3,r_img1,r_img2;
-  cv::Rect myROI_1(0,0*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // cam1
-  cv::Rect myROI_2(0,1*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // cam2
-  cv::Rect myROI_3(0,2*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // cam3
+  cv::Rect myROI_3(0,0*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // camera 3
+  cv::Rect myROI_2(0,1*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // camera 2
+  cv::Rect myROI_1(0,2*IMG_HEIGHT,IMG_WIDTH,IMG_HEIGHT); // camera 1
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    img1 = cv_ptr->image(myROI_2); // cam2
-    img2 = cv_ptr->image(myROI_3); // cam3
+    //img1 = cv_ptr->image(myROI_1); // camera 1
+    //img2 = cv_ptr->image(myROI_2); // camera 2
+    //img3 = cv_ptr->image(myROI_3); // camera 3
 
-    cv::remap(img1,r_img1,rmap[0][0],rmap[0][1],cv::INTER_LINEAR); // cam2 
-    cv::remap(img2,r_img2,rmap[1][0],rmap[1][1],cv::INTER_LINEAR); // cam3
+    img1 = cv_ptr->image(myROI_1);
+    if (baseline_opt == 0)
+	img2 = cv_ptr->image(myROI_2);
+    else
+	img2 = cv_ptr->image(myROI_3);
+    
+
+    cv::remap(img1,r_img1,rmap[0][0],rmap[0][1],cv::INTER_LINEAR); // camera 2 
+    cv::remap(img2,r_img2,rmap[1][0],rmap[1][1],cv::INTER_LINEAR); // camera 3
 
     //cv::imshow("view1", r_img1);
     //cv::imshow("view2", r_img2);
     //cv::imshow("view3", r_img3);  
 
-    left_rect = nvx_cv::createVXImageFromCVMat(context,r_img2);
+    left_rect = nvx_cv::createVXImageFromCVMat(context,r_img1);
     NVXIO_CHECK_REFERENCE(left_rect);
-    right_rect = nvx_cv::createVXImageFromCVMat(context,r_img1);
+    right_rect = nvx_cv::createVXImageFromCVMat(context,r_img2);
     NVXIO_CHECK_REFERENCE(right_rect);
 
     disparity = vxCreateImage(context, IMG_WIDTH, IMG_HEIGHT, VX_DF_IMAGE_U8);
@@ -130,7 +141,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_READ_ONLY,VX_MEMORY_TYPE_HOST);
     cv::Mat disp = map.getMat();
-    //cv::imshow("disparity",disp);
+    cv::imshow("disparity",disp);
 
     //char savefilename[50];
     //snprintf(savefilename,sizeof(savefilename),"/home/nvidia/saveddisp-3/disparity%05d.png",counter_global);
@@ -138,7 +149,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     //printf("%s",savefilename);
     //cv::imwrite(savefilename,disp);
 
-    //cv::waitKey(1);
+    cv::waitKey(1);
     double timer = read_rect_timer.toc();
     std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
   }
@@ -148,16 +159,42 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   }
 }
 
+
+
 int main(int argc, char **argv)
 {
+  char* b1_param_file;
+  char* b2_param_file;
+  char* param_file;
+
+  static struct poptOption options[] = {
+  { "b1_param_file",'c',POPT_ARG_STRING,&b1_param_file,0,"Destination for b1 calib file","STR" },
+  { "b2_param_file",'f',POPT_ARG_STRING,&b2_param_file,0,"Destination for b2 calib file","STR" },
+  { "baseline_opt",'b',POPT_ARG_INT,&baseline_opt,0,"Baseline option","NUM"},
+  POPT_AUTOHELP
+  { NULL, 0, 0, NULL, 0, NULL, NULL }
+  };
+
+  POpt popt(NULL, argc, argv, options, 0);
+  int c;
+  while((c = popt.getNextOpt()) >= 0) {}
+
   ros::init(argc, argv, "image_listener");
   ros::NodeHandle nh;
+
   cv::startWindowThread();
+
   // Read in camera parameters 
   cv::Vec3d T;
   cv::Vec4d D1,D2;
   cv::Mat R1, R2, P1, P2, Q, K1, K2, R;
-  cv::FileStorage fs("/home/nvidia/catkin_ws/src/ros_tegra_stereo/data/cam_stereo.yml",cv::FileStorage::READ);
+
+  if (baseline_opt == 0)
+    param_file = b1_param_file;
+  else
+    param_file = b2_param_file;
+
+  cv::FileStorage fs(param_file,cv::FileStorage::READ);
   if (!fs.isOpened()) {
       std::cerr << "Failed to open calibration parameter file." << std::endl;
   	return 0;
@@ -186,7 +223,6 @@ int main(int argc, char **argv)
   img_size.height = IMG_HEIGHT;
   img_size.width = IMG_WIDTH;
 
-  //cv::Mat rmap[2][2];
   cv::fisheye::initUndistortRectifyMap(K1, D1, R1, P1, img_size, CV_16SC2, rmap[0][0], rmap[0][1]);
   cv::fisheye::initUndistortRectifyMap(K2, D2, R2, P2, img_size, CV_16SC2, rmap[1][0], rmap[1][1]);
   std::cout << "Rectification remapping / warp calculated." << std::endl;

@@ -46,5 +46,5 @@ target_link_libraries(sgbm_node
 		${catkin_LIBRARIES} 
 		${OpenCV_LIBRARIES}
 		${CUDArt_LIBRARIES}
-	        ${VisionWorks_LIBRARIES})
+	        ${VisionWorks_LIBRARIES} "-lpopt")
 
