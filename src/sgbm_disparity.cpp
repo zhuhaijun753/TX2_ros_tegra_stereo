@@ -29,8 +29,8 @@
 
 #include "stereo_matching.hpp"
 
-#define IMG_HEIGHT 800
-#define IMG_WIDTH 960
+#define IMG_HEIGHT 1024
+#define IMG_WIDTH 1280
 
 cv::Mat rmap[2][2];
 vx_image left_rect;
@@ -42,7 +42,7 @@ StereoMatching::ImplementationType implementationType;
 int counter_global = 0;
 int baseline_opt;
 vx_uint32 plane_index = 0;
-vx_rectangle_t rect = {0u,0u,960u,800u};
+vx_rectangle_t rect = {0u,0u,1280u,1024u};
 
 static bool read(const std::string &nf, StereoMatching::StereoMatchingParams &config, std::string &message)
 {
@@ -147,11 +147,15 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     cv::waitKey(1);
     double timer = read_rect_timer.toc();
     std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
+    vxReleaseImage(&left_rect);
+    vxReleaseImage(&right_rect);
+    vxReleaseImage(&disparity);
   }
   catch (cv_bridge::Exception& e)
   {
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
   }
+
 }
 
 
