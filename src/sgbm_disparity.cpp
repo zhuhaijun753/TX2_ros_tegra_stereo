@@ -44,6 +44,8 @@ int baseline_opt;
 vx_uint32 plane_index = 0;
 vx_rectangle_t rect = {0u,0u,1280u,1024u};
 
+image_transport::Publisher pub;
+
 static bool read(const std::string &nf, StereoMatching::StereoMatchingParams &config, std::string &message)
 {
     std::unique_ptr<nvxio::ConfigParser> parser(nvxio::createConfigParser());
@@ -100,6 +102,7 @@ static bool read(const std::string &nf, StereoMatching::StereoMatchingParams &co
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
+
   nvx::Timer read_rect_timer;
   read_rect_timer.tic();
   cv_bridge::CvImagePtr cv_ptr;
@@ -136,7 +139,15 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_READ_ONLY,VX_MEMORY_TYPE_HOST);
     cv::Mat disp = map.getMat();
-    cv::imshow("disparity",disp);
+    //cv::imshow("disparity",disp);
+
+
+    cv_bridge::CvImage out_disp;
+    out_disp.header = cv_ptr->header;
+    out_disp.encoding = sensor_msgs::image_encodings::MONO8;
+    out_disp.image = disp;
+    pub.publish(out_disp.toImageMsg());
+
 
     //char savefilename[50];
     //snprintf(savefilename,sizeof(savefilename),"/home/nvidia/saveddisp-3/disparity%05d.png",counter_global);
@@ -144,7 +155,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     //printf("%s",savefilename);
     //cv::imwrite(savefilename,disp);
 
-    cv::waitKey(1);
+    //cv::waitKey(1);
     double timer = read_rect_timer.toc();
     std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
     vxReleaseImage(&left_rect);
@@ -252,5 +263,6 @@ int main(int argc, char **argv)
 
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe("/image", 1, imageCallback);
+  pub = it.advertise("/disparityimage",1);
   ros::spin();
 }
