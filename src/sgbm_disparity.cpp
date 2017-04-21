@@ -102,6 +102,8 @@ static bool read(const std::string &nf, StereoMatching::StereoMatchingParams &co
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
+  counter_global = counter_global + 1;
+  printf("Inside callack = %d\n",counter_global);
 
   nvx::Timer read_rect_timer;
   read_rect_timer.tic();
@@ -138,15 +140,15 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     stereo->run(); 
 
     nvx_cv::VXImageToCVMatMapper map(disparity,plane_index,&rect,VX_READ_ONLY,VX_MEMORY_TYPE_HOST);
-    cv::Mat disp = map.getMat();
+    //cv::Mat disp = map.getMat();
     //cv::imshow("disparity",disp);
 
 
-    cv_bridge::CvImage out_disp;
-    out_disp.header = cv_ptr->header;
-    out_disp.encoding = sensor_msgs::image_encodings::MONO8;
-    out_disp.image = disp;
-    pub.publish(out_disp.toImageMsg());
+    //cv_bridge::CvImage out_disp;
+    //out_disp.header = cv_ptr->header;
+    //out_disp.encoding = sensor_msgs::image_encodings::MONO8;
+    //out_disp.image = map.getMat();
+    //pub.publish(out_disp.toImageMsg());
 
 
     //char savefilename[50];
@@ -156,11 +158,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     //cv::imwrite(savefilename,disp);
 
     //cv::waitKey(1);
-    double timer = read_rect_timer.toc();
-    std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
     vxReleaseImage(&left_rect);
     vxReleaseImage(&right_rect);
     vxReleaseImage(&disparity);
+    double timer = read_rect_timer.toc();
+    std::cout << "Time Elapsed For Rect + SGBM : " << timer << " ms" << std::endl << std::endl;
   }
   catch (cv_bridge::Exception& e)
   {
@@ -241,7 +243,7 @@ int main(int argc, char **argv)
   app.setDescription("Stereo Matching for Disparity Estimation");
 
   app.setDescription("Stereo Matching for Disparity Estimation");
-  std::string configFile = "/home/nvidia/catkin_ws/src/ros_tegra_stereo/data/stereo_matching_params.ini"; // change
+  std::string configFile = "/home/ubuntu/catkin_ws/src/ros-tegra-stereo/data/stereo_matching_params.ini"; // change
 
   implementationType = StereoMatching::HIGH_LEVEL_API;
   std::string error;
