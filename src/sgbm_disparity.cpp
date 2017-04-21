@@ -29,8 +29,8 @@
 
 #include "stereo_matching.hpp"
 
-#define IMG_HEIGHT 1024
-#define IMG_WIDTH 1280
+#define IMG_WIDTH 1280 // change 
+#define IMG_HEIGHT 1024 // change
 
 cv::Mat rmap[2][2];
 vx_image left_rect;
@@ -42,7 +42,7 @@ StereoMatching::ImplementationType implementationType;
 int counter_global = 0;
 int baseline_opt;
 vx_uint32 plane_index = 0;
-vx_rectangle_t rect = {0u,0u,1280u,1024u};
+vx_rectangle_t rect = {0u,0u,1280u,1024u}; // change
 
 image_transport::Publisher pub;
 
@@ -241,7 +241,7 @@ int main(int argc, char **argv)
   app.setDescription("Stereo Matching for Disparity Estimation");
 
   app.setDescription("Stereo Matching for Disparity Estimation");
-  std::string configFile = "/home/nvidia/catkin_ws/src/ros_tegra_stereo/data/stereo_matching_params.ini";
+  std::string configFile = "/home/nvidia/catkin_ws/src/ros_tegra_stereo/data/stereo_matching_params.ini"; // change
 
   implementationType = StereoMatching::HIGH_LEVEL_API;
   std::string error;
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
   NVXIO_CHECK_REFERENCE(disparity);
 
   image_transport::ImageTransport it(nh);
-  image_transport::Subscriber sub = it.subscribe("/image", 1, imageCallback);
-  pub = it.advertise("/disparityimage",1);
+  image_transport::Subscriber sub = it.subscribe("/image", 1, imageCallback); // change
+  pub = it.advertise("/disparityimage",1); // change
   ros::spin();
 }
